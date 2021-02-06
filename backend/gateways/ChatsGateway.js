@@ -3,8 +3,21 @@ module.exports = class ChatsGateway {
         this._chatsSchema = database.ChatsSchema;
     }
 
-    create(values) {
-        return this._chatsSchema.create(values)
+    findOne(name) {
+        return this._chatsSchema.findOne({
+            where: { name }
+        })
     }
 
+    findAll() {
+        return this._chatsSchema.findAll()
+    }
+
+    findByPk(id) {
+        return this._chatsSchema.findByPk(id)
+    }
+
+    create(name) {
+        return this._chatsSchema.create({ name })
+    }
 }

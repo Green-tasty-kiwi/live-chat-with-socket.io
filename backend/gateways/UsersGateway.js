@@ -3,8 +3,15 @@ module.exports = class UsersGateway {
         this._usersSchema = database.UsersSchema;
     }
 
-    create(values) {
-        return this._usersSchema.create(values)
+    findAll() {
+        return this._usersSchema.findAll()
     }
 
+    create(name) {
+        return this._usersSchema.create({ name })
+    }
+
+    findByPk({ id }) {
+        return this._usersSchema.findByPk(id)
+    }
 }

@@ -13,6 +13,7 @@ import Avatar from '@material-ui/core/Avatar';
 import Fab from '@material-ui/core/Fab';
 import SendIcon from '@material-ui/icons/Send';
 import useSocket from '../context/useSocket';
+import requestSender from '../core/requestSender';
 
 
 const Chat = () => {
@@ -21,25 +22,45 @@ const Chat = () => {
     const [messages, setMessages] = useState([]);
     const [user, setUser] = useState({});
     const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]);
     const classes = useStyles();
     const { chatId } = useParams();
 
+    const createUser = async function () {
+        let userName = prompt('Введите свое имя');
+        socket.emit('user:join', { name: userName, chatId });
+    }
+
     useEffect(() => {
-        socket.on('user:joined', ({ name, id }) => {
+        const deleteCurrentUserFromUsers = (function () {
+            const newUsers = users.filter(currentUser => currentUser.id !== user.id);
+            setFilteredUsers(newUsers);
+        })()
+    }, [users])
+
+    useEffect(() => {
+
+        createUser()
+
+        socket.on('user:join', ({ name, id }) => {
             setUser({
                 name,
                 id
             })
         });
 
-        socket.on('chat:join', (users) => {
-            console.log(users)
-            setUsers(users)
-        });
-        socket.on('chat:message', ({ message, user }) => {
-            setMessages((prevData) => [...prevData, { message, user }]);
+        socket.on('chat:join', ({ users, messages }) => {
+            setUsers(users);
+            setMessages(messages);
         });
 
+        socket.on('chat:update', (users) => {
+            setUsers(users)
+        });
+
+        socket.on('chat:message', (message) => {
+            setMessages((prevData) => [...prevData, message]);
+        });
     }, []);
 
     const typeMessage = function (event) {
@@ -47,7 +68,7 @@ const Chat = () => {
     }
 
     const sendMessage = function () {
-        socket.emit('chat:message', { message, chatId: 1 });
+        socket.emit('chat:message', { message, chatId });
         setMessage('')
     }
 
@@ -65,12 +86,11 @@ const Chat = () => {
                     </List>
                     <Divider />
                     <List>
-                        {users.map((user, index) => {
+                        {filteredUsers.map((user, index) => {
                             return (
                                 <ListItem key={index}>
                                     <Grid container>
-
-                                        < Grid item xs={12} >
+                                        <Grid item xs={12} >
                                             <ListItemText align="left" primary={user.name}>{user.name}</ListItemText>
                                         </Grid>
                                     </Grid>
@@ -81,33 +101,13 @@ const Chat = () => {
                 </Grid>
                 <Grid item xs={9}>
                     <List className={classes.messageArea}>
-                        <ListItem key="1">
-                            <Grid container>
-                                <Grid item xs={12}>
-                                    <ListItemText align="right" primary="Hey man, What's up ?"></ListItemText>
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <ListItemText align="right" secondary="09:30"></ListItemText>
-                                </Grid>
-                            </Grid>
-                        </ListItem>
-                        <ListItem key="2">
-                            <Grid container>
-                                <Grid item xs={12}>
-                                    <ListItemText align="left" primary="Hey, Iam Good! What about you ?"></ListItemText>
-                                </Grid>
-                                <Grid item xs={12}>
-                                    <ListItemText align="left" secondary="09:31"></ListItemText>
-                                </Grid>
-                            </Grid>
-                        </ListItem>
                         {messages.map((msg, index) => {
                             return (
                                 <ListItem key={index}>
                                     <Grid container>
 
-                                        < Grid item xs={12} >
-                                            <ListItemText align="right" primary={msg.message} secondary={msg.user.name}></ListItemText>
+                                        <Grid item xs={12} >
+                                            <ListItemText align={index % 2 ? 'left' : 'right'} primary={msg.text} secondary={msg.user.name}></ListItemText>
                                         </Grid>
                                     </Grid>
                                 </ListItem>
@@ -147,7 +147,9 @@ const useStyles = makeStyles({
     },
     messageArea: {
         height: '70vh',
-        overflowY: 'auto'
+        overflowY: 'auto',
+
+        padding: '0 16px'
     }
 });
 

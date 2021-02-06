@@ -1,3 +1,4 @@
 export default {
-    apiUrl: 'localhost:4000',
+    apiUrl: 'http://localhost:4005/api',
+    websocketUrl: 'http://localhost:4000',
 };

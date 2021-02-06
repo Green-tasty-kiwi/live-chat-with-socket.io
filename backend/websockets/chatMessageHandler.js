@@ -1,10 +1,10 @@
-const chatMessageHandler = ({ io, socket }) => {
+const chatMessageHandler = ({ io, socket, messagesGateway, chatsGateway }) => {
     return (
-        ({ message, chatId }) => {
-            io.sockets.in('room-' + chatId).emit('chat:message', { message, user: socket.user });
+        async ({ message, chatId }) => {
+            const recievedMessage = await messagesGateway.create({ message, chatId, userId: socket.user.id });
+            io.in(chatId).emit('chat:message', { ...recievedMessage.dataValues, user: socket.user });
         }
     )
-
 };
 
 module.exports = chatMessageHandler;

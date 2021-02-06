@@ -1,19 +1,21 @@
-const userJoinHandler = ({ socket, io }) => {
+const userJoinHandler = ({ socket, io, chatsGateway, messagesGateway, usersGateway }) => {
     return (
-        ({ name, chatId }) => {
-            socket.user = { name, id: socket.id };
-            socket.join('room-' + chatId);
-            const sockets = io.in('room-' + chatId).sockets.sockets;
-            let users = [];
-            for (const chatSocket of sockets) {
+        async ({ name, chatId }) => {
+            const user = await usersGateway.create(name);
+            socket.user = user;
+            socket.emit('user:join', { name: socket.user.name, id: socket.user.id })
+            socket.join(chatId);
+            socket.room = chatId;
 
-                const [, sct] = chatSocket;
+            const users = [];
+            const messages = await messagesGateway.findAll({ chatId });
 
-                if (sct.id !== socket.id) users.push(sct.user)
-            }
+            io.in(chatId).sockets.sockets.forEach(function (socket) {
+                users.push(socket.user);
+            });
 
-            users = users.filter(Boolean);
-            io.in('room-' + chatId).emit('chat:join', users);
+            const filteredUsers = users.filter(Boolean);
+            io.in(chatId).emit('chat:join', { users: filteredUsers, messages });
         }
     )
 }

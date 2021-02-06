@@ -1,21 +1,18 @@
 const chatMessageHandler = require('./chatMessageHandler');
+const userLeaveHandler = require('./userLeaveHandler');
 const userJoinHandler = require('./userJoinHandler');
 
 const ioConnectionHandler = ({ io, usersGateway, messagesGateway, chatsGateway }) => {
-    return (
-        io.on("connection", (socket) => {
+    io.on("connection", (socket) => {
 
-            console.log('SOCKET with id ' + socket.id + ' connected');
+        console.log('SOCKET with id ' + socket.id + ' connected');
 
-            socket.on('chat:message', chatMessageHandler({ socket, io }));
+        socket.on('chat:message', chatMessageHandler({ socket, io, messagesGateway, chatsGateway }));
 
-            socket.on('user:join', userJoinHandler({ socket, io }));
+        socket.on('user:join', userJoinHandler({ socket, io, chatsGateway, usersGateway, messagesGateway }));
 
-            socket.on('disconnect', function () {
-                console.log('SOCKET with id ' + socket.id + ' disconnected');
-            });
-        }
-        ))
+        socket.on('disconnect', userLeaveHandler({ socket, io, usersGateway }));
+    })
 };
 
 
